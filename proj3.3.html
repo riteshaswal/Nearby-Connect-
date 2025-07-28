@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nearby Connect – Dashboard</title>
+    <!-- Icons (optional, for chat/search/etc.) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet"> <!-- Added Google Font -->
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f7f7f7;
+            color: #333;
+        }
+            /* Notification Toast styles */
+    .notification-toast {
+        visibility: hidden; /* Hidden by default */
+        min-width: 250px;
+        margin-left: -125px; /* Center the toast */
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 2px;
+        padding: 16px;
+        position: fixed;
+        z-index: 1;
+        bottom: 30px;
+        left: 50%;
+        font-size: 17px;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    .notification-toast.success {
+        background-color: #4CAF50;
+    }
+
+    .notification-toast.error {
+        background-color: #f44336;
+    }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #4CAF50;
+            padding: 20px 30px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid white;
+            object-fit: cover;
+        }
+
+        .dashboard-nav button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            margin-left: 20px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .dashboard-nav button:hover {
+            transform: scale(1.2);
+        }
+
+     
+
+        .profile-info {
+            font-size: 16px;
+            color: #555;
+        }
+
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #4CAF50;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        input[type="file"], input[type="text"], textarea {
+            margin-bottom: 20px;
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px;
+            }
+
+            .user-info {
+                margin-bottom: 10px;
+            }
+
+            .dashboard-nav {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .dashboard-nav button {
+                font-size: 24px; /* Increase button size on medium screens */
+            }
+
+            .profile-main {
+                padding: 25px;
+                font-size: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: center;
+                padding: 25px 20px;
+            }
+
+            .user-avatar {
+                width: 60px;
+                height: 60px;
+            }
+
+            #displayName {
+                font-size: 20px;
+            }
+
+            .dashboard-nav {
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                width: 100%;
+                padding: 15px 0;
+                background-color: #45a049; /* slightly deeper green for mobile */
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .dashboard-nav button {
+                font-size: 36px; /* Larger icon size */
+                margin: 0 15px;
+                padding: 10px;
+            }
+
+            .profile-main {
+                padding: 20px;
+                font-size: 16px;
+            }
+        }
+       /* Container for text */
+.profile-main {
+    background: linear-gradient(45deg, #a2c2e6, #ffffff); /* Gradient background */
+    padding: 50px;
+    border-radius: 15px;
+    text-align: center;
+    margin-top: 50px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Welcome text animation */
+.welcome-text {
+    font-family: 'Arial', sans-serif;
+    font-weight: 900;
+    color: white;
+    font-size: 3.5rem;
+    text-transform: uppercase; /* Make text capitalized */
+    letter-spacing: 5px;
+    opacity: 0;
+    animation: fadeInUp 1.5s ease-out forwards;
+}
+
+/* Pulsing highlight for 'Nearby Connect' */
+.highlight {
+    color: #FFD700;
+    font-weight: bold;
+    animation: pulse 1.5s infinite alternate;
+}
+
+/* For user's name */
+.username-highlight {
+    color: black;
+    font-style: italic;
+    font-size: 3rem;
+    animation: fadeIn 2s ease-in forwards;
+}
+
+/* Keyframes for fadeInUp animation */
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Pulsing animation for highlight */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        color: #FFD700;
+    }
+    100% {
+        transform: scale(1.1);
+        color: #FF5733;
+    }
+}
+
+/* Keyframes for fading in the username */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+.notification-popup {
+    position: fixed;
+    top: 20px;  /* You can change to bottom: 20px to show at the bottom */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #007bff;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 18px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.notification-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+.red-dot {
+  width: 10px;
+  height: 10px;
+  background: red;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: none;
+}
+.red-dot.show {
+  display: block;
+}
+    </style>
+</head>
+<body>
+    <div id="notificationPopUp" class="notification-popup" style="display: none;">
+        1 new notification!
+    </div>
+
+    <header class="dashboard-header">
+        <div class="user-info">
+            <img src="/static/uploads/dummyperson copy.png" alt="User" class="user-avatar" id="profilePic"> <!-- Profile image from DB will be set by JS -->
+            <span id="displayName">Hello!</span>
+        </div>
+        <nav class="dashboard-nav">
+      <button id="chat-button" style="position: relative;">
+  💬 
+  <span id="chat-notification-dot" style="
+    display: none;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+    border: 2px solid white;
+  "></span>
+</button>
+            <button onclick="window.location.href='proj3.4.html'"><i class="bi bi-search"></i></button>
+            <button id="profileBtn"><i class="bi bi-person-circle"></i></button>
+            <button onclick="window.location.href='proj3.6.html'" id="notificationButton" style="position: relative;">
+                <i class="bi bi-bell"></i>
+                <span id="notificationDot" style="
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    height: 10px;
+                    width: 10px;
+                    background-color: red;
+                    border-radius: 50%;
+                    display: none;
+                  "></span>
+              </button>
+            <button id="geo"><i class="bi bi-geo-alt"></i></button>
+            <button id="logoutBtn"><i class="bi bi-box-arrow-right"></i></button>
+        </nav>
+    </header>
+    <div id="notificationToast" class="notification-toast">
+        <div id="toastMessage"></div>
+    </div>
+    
+    <main class="profile-main">
+        <h2 id="welcomeHeading" class="fade-in-text">
+            Welcome to <span class="highlight">Nearby Connect</span>
+            <span id="mainUserName" class="username-highlight"></span>   !
+        </h2>
+        <p class="profile-info">Email: <span id="userEmail"></span></p>
+    
+        <!-- Profile Section -->
+        <div class="profile-section" style="display: flex; gap: 40px; align-items: flex-start;">
+            <!-- LEFT: Profile Picture -->
+            <div style="text-align: center;">
+                <h3>Your Profile</h3>
+                <img id="currentProfilePic" class="profile-image"
+                     src="/static/uploads/dummyperson copy.png"
+                     alt="Current Profile"
+                     style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 3px solid #ccc;">
+                <form id="uploadForm" style="margin-top: 10px;">
+                    <input type="file" id="fileInput" name="profile_pic" accept="image/*" required>
+                    <button type="submit" style="margin-top: 5px;">Upload New Photo</button>
+                </form>
+                <p id="uploadStatus" style="color: green;"></p>
+            </div>
+            <div id="dynamicListSection" style="
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30%;
+            max-height: 70%;
+            background: #f9f9ff;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        ">
+            <button onclick="closeDynamicBox()" style="
+                position: absolute;
+                top: 10px;
+                right: 3px;
+                background: none;
+                border: none;
+                font-size: 22px;
+                cursor: pointer;
+                font-weight: bold;
+                color: #555;
+            ">×</button>
+            <div id="dynamicContent"></div>
+        </div>
+        
+            <!-- RIGHT: Username + Stats -->
+            <div style="flex: 1; text-align: center; padding-top: 50px;">
+                <h2 id="userNameDisplay"
+                    style="font-weight: bold; margin: 0 0 20px; font-size: 32px; text-transform: uppercase; letter-spacing: 1px;">
+                    Username
+                </h2>
+                <div style="display: flex; justify-content: center; gap: 60px;">
+                    <div>
+                        <h4 style="margin: 0;">Connections</h4>
+                        <p id="connectionsCount"  onclick="showConnections()"
+                           style="font-size: 26px; font-weight: bold; color: #4CAF50; margin: 10px 0;">0</p>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0;">Requests</h4>
+                        <p id="requestsCount" onclick="showRequests()"
+                           style="font-size: 26px; font-weight: bold; color: #FF9800; margin: 10px 0;">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bio Section -->
+        <div class="profile-section">
+            <h3>Your Bio</h3>
+            <textarea id="bio" rows="4" placeholder="Tell us about yourself..."></textarea>
+        </div>
+
+        <!-- Profession Section -->
+        <div class="profile-section">
+            <h3>Your Profession</h3>
+            <input type="text" id="profession" placeholder="Your Profession">
+        </div>
+
+        <!-- Hobbies Section -->
+        <div class="profile-section">
+            <h3>Your Hobbies</h3>
+            <input type="text" id="hobbies" placeholder="Your Hobbies, e.g., Reading, Traveling">
+        </div>
+
+        <button id="saveProfileBtn">Save Profile</button>
+    </main>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+    
+ const socket = io();
+  let currentUserId;
+
+  // Fetch current user's ID from the server
+  fetch('/current-user')
+    .then(res => res.json())
+    .then(data => {
+      if (data._id) {
+        currentUserId = data._id;
+        socket.emit('join', { user_id: currentUserId });
+        console.log("🟢 Joined room:", currentUserId);
+      } else {
+        console.error("❌ Failed to fetch user ID");
+      }
+    });
+
+  const chatNotificationDot = document.getElementById("chat-notification-dot");
+
+  // Show the red dot
+function showChatNotificationDot() {
+  console.log("🔴 showChatNotificationDot() called!");
+  document.getElementById("chat-notification-dot").style.display = "block";
+  localStorage.setItem("chatDotVisible", "true");  // 🔐 Save state
+}
+  // Hide the red dot
+function hideChatNotificationDot() {
+  document.getElementById("chat-notification-dot").style.display = "none";
+  localStorage.removeItem("chatDotVisible");  // 🧹 Clear state
+}
+
+  // Open chat page & hide the dot
+  function openChatPage() {
+  hideChatNotificationDot();  // ✅ Clear the dot
+  window.location.href = "proj3.7.html";  // or wherever your chat is
+}
+
+  // Listen for real-time messages
+  socket.on('receive_message', (msg) => {
+    console.log("📩 Received a real-time message:", msg);
+    const currentUrl = window.location.pathname;
+    
+    // ✅ Show red dot if you're NOT already on proj3.8.html
+    if (!currentUrl.includes("proj3.8.html")) {
+      showChatNotificationDot();
+    }
+  });
+
+  // 🔗 Attach openChatPage() to your chat button
+  document.getElementById("chat-button").addEventListener("click", openChatPage);
+    
+      socket.on('new_notification', (data) => {
+            console.log("New notification received:", data);
+
+            // Show red dot
+            const dot = document.getElementById("notificationDot");
+            if (dot) dot.style.display = "block";
+
+            // Show pop-up
+            const popUp = document.getElementById('notificationPopUp');
+            if (popUp) {
+                popUp.classList.add('show');
+                popUp.style.display = 'block';
+
+                // Hide pop-up after 3 seconds
+                setTimeout(() => {
+                    popUp.classList.remove('show');
+                    popUp.style.display = 'none';
+                }, 3000);
+            }
+        });
+    
+      socket.on('remove_notification', (data) => {
+        // Optional: if all notifications cleared, hide dot
+        // You can also check count etc.
+        document.getElementById("notificationDot").style.display = "none";
+      });
+      socket.on('remove_request_ui', data => {
+        const username = data.from;
+        const requestDiv = document.getElementById(`request-${username}`);
+        if (requestDiv) {
+            requestDiv.remove();
+            updateRequestCount();
+        }
+    });
+    </script>
+   
+  <script>
+    
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        fetch("/user-info")
+            .then(res => res.json())
+            .then(data => {
+                if (data.username && data.email) {
+                    document.getElementById("displayName").textContent = `Hello, ${data.username}!`;
+                    document.getElementById("mainUserName").textContent = data.username;
+                    document.getElementById("userEmail").textContent = data.email;
+    
+                    const profilePic = data.profile_pic || "/static/uploads/dummyperson copy.png";
+                    document.getElementById("profilePic").src = profilePic;
+                    document.getElementById("currentProfilePic").src = profilePic;
+    
+                    // Pre-fill Bio, Profession, Hobbies
+                    document.getElementById("bio").value = data.bio || "";
+                    document.getElementById("profession").value = data.profession || "";
+                    document.getElementById("hobbies").value = data.hobbies || "";
+                } else {
+                    window.location.href = "/";
+                }
+            });} )
+            
+
+            
+    
+        // Upload logic
+        const form = document.getElementById("uploadForm");
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+    
+            const fileInput = document.getElementById("fileInput");
+            const formData = new FormData();
+            formData.append("profile_pic", fileInput.files[0]);
+    
+            fetch("/upload-profile-pic", {
+                method: "POST",
+                body: formData
+            })
+            .then(res => res.json())
+            .then(result => {
+                const status = document.getElementById("uploadStatus");
+                if (result.success) {
+                    status.textContent = "Profile picture updated!";
+                    document.getElementById("profilePic").src = result.image_url;
+                    document.getElementById("currentProfilePic").src = result.image_url;
+                } else {
+                    status.style.color = "red";
+                    status.textContent = result.error;
+                }
+            });
+        });
+    
+        // Save Profile
+        function showNotification(message, type) {
+    const toast = document.getElementById('notificationToast');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // Set the message and type of notification (success or error)
+    toastMessage.textContent = message;
+    
+    // Set the class based on success or error
+    toast.classList.add(type);  // 'success' or 'error'
+    
+    // Make the toast visible
+    toast.style.visibility = "visible";
+    toast.style.opacity = 1;
+    
+    // Hide the toast after 3 seconds
+    setTimeout(() => {
+        toast.style.visibility = "hidden";
+        toast.style.opacity = 0;
+        toast.classList.remove(type);  // Remove the class after hiding
+    }, 3000); // Hide after 3 seconds
+}
+
+const saveProfileBtn = document.getElementById("saveProfileBtn");
+saveProfileBtn.addEventListener("click", () => {
+    const bio = document.getElementById("bio").value;
+    const profession = document.getElementById("profession").value;
+    const hobbies = document.getElementById("hobbies").value;
+
+    const data = {
+        bio: bio,
+        profession: profession,
+        hobbies: hobbies
+    };
+
+    fetch("/save-profile", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            showNotification("Profile saved successfully!", "success");
+        } else {
+            showNotification("Error saving profile.", "error");
+        }
+    });
+});
+document.getElementById('mainUserName').textContent = sessionStorage.getItem("username") || "Guest";
+window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem("chatDotVisible") === "true") {
+    showChatNotificationDot();  // 🔁 Show again after refresh
+  }
+
+    fetch('/user-info')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('currentProfilePic').src = data.profile_pic || '/static/uploads/dummyperson copy.png';
+            document.getElementById('userNameDisplay').textContent = data.username || 'User';
+            document.getElementById('connectionsCount').textContent = data.connections_count || 0;
+            document.getElementById('requestsCount').textContent = data.requests_count || 0;
+        })
+        .catch(err => {
+            console.error("Failed to fetch user info:", err);
+        });
+        
+});
+
+function showConnections() {
+    fetch('/user-info')
+        .then(res => res.json())
+        .then(data => {
+            const list = data.connections || [];
+            const content = list.length
+                ? `<h3>Connections</h3>` + list.map(username => {
+                    const profilePicUrl = `/static/uploads/${username}_profile.jpg`;
+                    return `
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            <img src="${profilePicUrl}" 
+                                 onError="this.onerror=null;this.src='/static/uploads/dummyperson copy.png';" 
+                                 alt="Profile Picture" 
+                                 style="width: 40px; height: 40px; border-radius: 50%;">
+                            <span style="font-weight: bold;">${username}</span>
+                            <button onclick="startChat('${username}')">Chat</button>
+                        </div>
+                    `;
+        }).join('')
+                : `<p>No connections yet.</p>`;
+
+            document.getElementById("dynamicContent").innerHTML = content;
+            document.getElementById("dynamicListSection").style.display = 'block';
+        });
+}
+
+function showRequests() {
+    fetch('/user-info')
+        .then(res => res.json())
+        .then(data => {
+            const list = data.connection_requests || [];
+            document.getElementById("requestsCount").textContent = list.length;
+
+            const content = list.length
+                ? `<h3>Connection Requests</h3>` + list.map(username => `
+        <div id="request-${username}" style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+            <img src="/static/uploads/${username}_profile.jpg" 
+                 onerror="this.onerror=null;this.src='/static/uploads/dummyperson copy.png';"
+                 alt="/static/uploads/dummyperson copy.png" 
+                 style="width: 40px; height: 40px; border-radius: 50%;">
+            <span style="font-weight: bold;">${username}</span>
+            <button onclick="acceptConnection('${username}')">Accept</button>
+            <button onclick="rejectConnection('${username}')">Reject</button>
+        </div>
+    `).join('') : `<p>No requests pending.</p>`;
+
+            document.getElementById("dynamicContent").innerHTML = content;
+            document.getElementById("dynamicListSection").style.display = 'block';
+        });
+}
+
+// Real-time SocketIO listener to update request list when someone sends a request
+socket.on('new_request', (data) => {
+    console.log("New request from:", data.from);
+    
+    // Check if the request is already in DOM
+    if (!document.getElementById(`request-${data.from}`)) {
+        const container = document.getElementById("dynamicContent");
+        const requestHTML = `
+            <div id="request-${data.from}" style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                <img src="/static/uploads/${data.from}_profile.jpg" 
+                    onerror="this.onerror=null;this.src='/static/uploads/dummyperson copy.png';"
+                    alt="/static/uploads/dummyperson copy.png" 
+                    style="width: 40px; height: 40px; border-radius: 50%;">
+                <span style="font-weight: bold;">${data.from}</span>
+                <button onclick="acceptConnection('${data.from}')">Accept</button>
+                <button onclick="rejectConnection('${data.from}')">Reject</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', requestHTML);
+        
+        // Update the count
+        const countElem = document.getElementById("requestsCount");
+        countElem.textContent = parseInt(countElem.textContent || "0") + 1;
+    }
+});
+// Real-time SocketIO listener to remove request from UI when rejected or accepted
+socket.on('remove_request', (data) => {
+    const requestElem = document.getElementById(`request-${data.from}`);
+    if (requestElem) {
+        requestElem.remove();
+
+        // Update the count
+        const countElem = document.getElementById("requestsCount");
+        let count = parseInt(countElem.textContent || "0");
+        count = count > 0 ? count - 1 : 0;
+        countElem.textContent = count;
+
+        // If no more requests, show message
+        const remainingRequests = document.querySelectorAll("[id^='request-']");
+        if (remainingRequests.length === 0) {
+            document.getElementById("dynamicContent").innerHTML = `<p>No requests pending.</p>`;
+        }
+    }
+});
+function closeDynamicBox() {
+    document.getElementById("dynamicListSection").style.display = 'none';
+}
+
+function startChat(username) {
+    window.location.href = `proj3.7.html?user=${username}`;
+
+}
+function acceptConnection(username) {
+    updateRequestCount();
+    console.log("Accept button clicked for", username);  // <-- This log should appear in console when clicked
+    axios.post('/accept-connection', {
+        from: username
+    }).then(response => {
+        console.log("Accept response:", response.data);  // <-- This log should show the server's response
+        if (response.data.success) {
+            deleteNotification(username, 'connections request');
+            showRequests();
+        } else {
+            alert("Failed to accept: " + response.data.error);
+        }
+    }).catch(err => {
+        console.error("Accept connection error:", err);
+    });
+}
+
+function rejectConnection(username) {
+    updateRequestCount();
+    console.log("Reject button clicked for", username);  // <-- This log should appear in console when clicked
+    axios.post('/remove-connection-request', {
+        from: username
+    }).then(response => {
+        console.log("Reject response:", response.data);  // <-- This log should show the server's response
+        if (response.data.success) {
+            deleteNotification(username, 'connections request');
+            showRequests();  // refresh request list
+        }
+    }).catch(err => {
+        console.error("Reject connection error:", err);
+    });
+}
+function updateRequestCount() {
+    const remaining = document.querySelectorAll('[id^="request-"]').length;
+    document.getElementById("requestsCount").textContent = remaining;
+    
+    if (remaining === 0) {
+        document.getElementById("dynamicContent").innerHTML = `<p>No requests pending.</p>`;
+    }
+}
+ document.getElementById('geo').addEventListener('click', () => {
+            window.location.href = 'proj3.9.html';
+        });
+
+
+
+       document.getElementById('logoutBtn').addEventListener('click', function() {
+    if (confirm("Are you sure you want to logout?")) {
+        fetch('/logout', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                alert("Logout failed.");
+            }
+        })
+        .catch(err => {
+            console.error('Logout error:', err);
+            alert("Logout error occurred.");
+        });
+    }
+});
+</script>
+
+ 
+
+</body>
+</html>

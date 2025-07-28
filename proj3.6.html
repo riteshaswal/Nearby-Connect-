@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #dfe9f3;
+            margin: 0;
+            padding-top: 60px;
+        }
+
+        .dashboard-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #007bff;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .dashboard-nav button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .dashboard-nav button:hover {
+            transform: scale(1.2);
+        }
+
+        .phone-box {
+            background-color: white;
+            border: 2px solid #1a73e8;
+            border-radius: 25px;
+            width: 380px;
+            min-height: 600px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            margin: 30px 0 30px 30px;
+            float: left;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h2 {
+            color: #1a73e8;
+            font-size: 24px;
+            text-align: center;
+            margin: 20px 0 10px;
+        }
+
+        #notifications {
+            flex-grow: 1;
+            padding: 10px 20px 20px;
+            overflow-y: auto;
+        }
+
+        .notification {
+            background: #fcfcfd;
+            border: 1px solid #e0e0e0;
+            padding: 16px 20px;
+            margin-bottom: 15px;
+            border-radius: 14px;
+            animation: fadeIn 0.3s ease-in-out;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .notification:hover {
+            transform: scale(1.015);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.07);
+            cursor: pointer;
+        }
+
+        .notification p {
+            margin: 0;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .no-notif {
+            font-size: 15px;
+            text-align: center;
+            margin-top: 30px;
+            color: #777;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+.btn-accept {
+    background-color: #4CAF50;
+}
+
+.btn-remove {
+    background-color: #FF5733;
+}
+
+.btn-delete {
+    background-color: #f44336;
+}
+
+.btn-chat {
+    background-color: #2196F3;
+}
+    </style>
+</head>
+<body>
+    <!-- NAVBAR -->
+    <nav class="dashboard-nav">
+        <button id="chat-button" style="position: relative;">
+  💬 
+  <span id="chat-notification-dot" style="
+    display: none;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+    border: 2px solid white;
+  "></span>
+</button>
+        <button onclick="window.location.href='proj3.4.html'"><i class="bi bi-search"></i></button>
+        <button id="profileBtn"><i class="bi bi-person-circle"></i></button>
+        <button><i class="bi bi-bell"></i></button>
+        <button id="geo"><i class="bi bi-geo-alt"></i></button>
+    </nav>
+
+    <!-- NOTIFICATION PHONE VIEW -->
+    <div class="phone-box">
+        <h2>Notifications</h2>
+        <div id="notifications">
+            <p class="no-notif">Loading...</p>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        const socket = io();
+        let CURRENT_USERNAME = localStorage.getItem("username");
+          let currentUserId;
+
+  // Fetch current user's ID from the server
+  fetch('/current-user')
+    .then(res => res.json())
+    .then(data => {
+      if (data._id) {
+        currentUserId = data._id;
+        socket.emit('join', { user_id: currentUserId });
+        console.log("🟢 Joined room:", currentUserId);
+      } else {
+        console.error("❌ Failed to fetch user ID");
+      }
+    });
+
+  const chatNotificationDot = document.getElementById("chat-notification-dot");
+  function showChatNotificationDot() {
+  console.log("🔴 showChatNotificationDot() called!");
+  document.getElementById("chat-notification-dot").style.display = "block";
+  localStorage.setItem("chatDotVisible", "true");  // 🔐 Save state
+}
+  // Hide the red dot
+function hideChatNotificationDot() {
+  document.getElementById("chat-notification-dot").style.display = "none";
+  localStorage.removeItem("chatDotVisible");  // 🧹 Clear state
+}
+
+  // Open chat page & hide the dot
+  function openChatPage() {
+  hideChatNotificationDot();  // ✅ Clear the dot
+  window.location.href = "proj3.7.html";  // or wherever your chat is
+}
+
+  // Listen for real-time messages
+  socket.on('receive_message', (msg) => {
+    console.log("📩 Received a real-time message:", msg);
+    const currentUrl = window.location.pathname;
+    
+    // ✅ Show red dot if you're NOT already on proj3.8.html
+    if (!currentUrl.includes("proj3.8.html")) {
+      showChatNotificationDot();
+    }
+  });
+
+  // 🔗 Attach openChatPage() to your chat button
+  document.getElementById("chat-button").addEventListener("click", openChatPage);
+
+if (!CURRENT_USERNAME) {
+    // fallback: try to fetch from backend if not stored in localStorage
+    axios.get('/get-current-username')
+        .then(response => {
+            CURRENT_USERNAME = response.data.username;
+            socket.emit('join', { username: CURRENT_USERNAME });
+        })
+        .catch(err => {
+            console.error("Couldn't determine username:", err);
+        });
+} else {
+    socket.emit('join', { username: CURRENT_USERNAME });
+}
+        // Join your own personal notification room
+        
+        // Listen for real-time notifications
+        socket.on('new_notification', (data) => {
+            if (data.to === CURRENT_USERNAME) {
+                console.log("📩 Real-time notification received:", data);
+                renderNotification(data);
+            }
+        });
+    
+        // Fetch notifications on page load
+        axios.get('/get-notifications')
+    .then(response => {
+        const container = document.getElementById('notifications');
+        container.innerHTML = '';
+        if (response.data.length === 0) {
+            container.innerHTML = '<p class="no-notif">No notifications yet</p>';
+        } else {
+            // Final layer: client-side sort
+            const sorted = response.data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            sorted.forEach(n => renderNotification(n));
+        }
+    });
+    
+        // Function to render a notification
+        function renderNotification(notification) {
+    const container = document.getElementById('notifications');
+    
+    // Check if container exists
+    if (!container) {
+        console.error("Notifications container not found!");
+        return;
+    }
+    
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.dataset.notifId = `${notification.from}-${notification.type}`;
+
+    const timeStr = notification.timestamp ? new Date(notification.timestamp).toLocaleString() : '';
+
+    let actionButtons = '';
+    let profilePic = notification.profile_pic || '/static/uploads/dummyperson copy.png';  // fallback image
+
+    if (notification.type === 'connections request') {
+        actionButtons = `
+            <button class="btn-accept" onclick="acceptConnection('${notification.from}')">Accept</button>
+            <button class="btn-remove" onclick="removeConnection('${notification.from}')">Remove</button>
+            <button class="btn-delete" onclick="deleteNotification('${notification.from}', '${notification.type}')">Delete</button>
+        `;
+    } else if (notification.type === 'connection_accepted') {
+        actionButtons = `
+            <button class="btn-chat" onclick="startChat('${notification.from}')">Chat</button>
+        `;
+    }
+
+    // Creating the notification element
+    notif.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="${profilePic}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%;">
+            <div style="flex: 1;">
+                <p><strong>${notification.from}</strong>: ${notification.message}</p>
+                <p style="font-size: 12px; color: gray;">${timeStr}</p>
+                <div class="actions">${actionButtons}</div>
+            </div>
+        </div>
+    `;
+
+    // Prepending it to the container
+    container.prepend(notif);  // Add on top
+}
+
+    function startChat(username) {
+        window.location.href = `proj3.7.html?username=${username}`;
+    }
+          document.getElementById('profileBtn').addEventListener('click', () => {
+            window.location.href = 'proj3.3.html';
+        });
+        socket.on('remove_notification', (data) => {
+    if (data.to !== CURRENT_USERNAME) return;
+
+    const notifications = document.querySelectorAll('.notification');
+
+    notifications.forEach(n => {
+        const text = n.querySelector('p')?.innerText || "";
+        if (text.includes(data.from)) {
+            n.remove();
+        }
+    });
+
+    // If no notifications left, show fallback message
+    if (document.querySelectorAll('.notification').length === 0) {
+        document.getElementById('notifications').innerHTML = '<p class="no-notif">No notifications yet</p>';
+    }
+});
+function deleteNotification(from, type) {
+    axios.post('/delete-notification', {
+        from: from,
+        type: type
+    })
+    .then(response => {
+        if (response.data.success) {
+            const notif = document.querySelector(`[data-notif-id="${from}-${type}"]`);
+            if (notif) notif.remove();
+        }
+    })
+    .catch(err => console.error("Failed to delete notification:", err));
+}
+function acceptConnection(fromUser) {
+    axios.post('/accept-connection', {
+        from: fromUser
+    }).then(response => {
+        if (response.data.success) {
+            deleteNotification(fromUser, 'connections request');
+        }
+    }).catch(err => {
+        console.error("Accept connection error:", err);
+    });
+}
+
+function removeConnection(fromUser) {
+    axios.post('/remove-connection-request', {
+        from: fromUser
+    }).then(response => {
+        if (response.data.success) {
+            deleteNotification(fromUser, 'connections request');
+        }
+    }).catch(err => {
+        console.error("Remove connection error:", err);
+    });
+}
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem("chatDotVisible") === "true") {
+    showChatNotificationDot();  // 🔁 Show again after refresh
+  }});
+   document.getElementById('geo').addEventListener('click', () => {
+            window.location.href = 'proj3.9.html';
+        });
+
+
+        
+
+    </script>
+</body>
+</html>

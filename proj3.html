@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account / Login</title>
+    <!-- Animate.css for entrance/exit animations -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #9face6);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 320px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #5c6bc0;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #3f51b5;
+        }
+
+        .tab-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+
+        .tab-buttons button {
+            width: 45%;
+            background-color: #eee;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+
+        .tab-buttons button.active {
+            background-color: #5c6bc0;
+            color: white;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+        /* Tablets and smaller desktop screens (width between 481px and 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .container {
+        width: 75%;
+        padding: 25px;
+    }
+
+    .tab-buttons button {
+        width: 48%;
+    }
+
+    h2 {
+        font-size: 22px;
+    }
+}
+
+/* Larger desktop screens (width above 768px) */
+@media (min-width: 769px) {
+    .container {
+        width: 400px;
+        padding: 30px;
+    }
+
+    .tab-buttons button {
+        width: 45%;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+}
+/* Phones (width up to 480px) */
+@media (max-width: 480px) {
+    .container {
+        width: 90%;
+        padding: 20px;
+    }
+
+    .tab-buttons button {
+        width: 100%;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tab-buttons">
+        <button id="signupTab" class="active">Sign Up</button>
+        <button id="loginTab">Login</button>
+    </div>
+
+    <div id="signupForm" class="form-section active">
+        <h2>Create Account</h2>
+        <form>
+            <input type="text" id="username" placeholder="Username" required><br>
+            <input type="email" id="email" placeholder="Email" required><br>
+            <input type="password" id="password" placeholder="Password" required><br>
+            <button type="submit">Create Account</button>
+        </form>
+    </div>
+
+    <div id="loginForm" class="form-section">
+        <h2>Login</h2>
+        <form>
+            <input type="text" id="loginUsername" placeholder="Username" required><br>
+            <input type="password" id="loginPassword" placeholder="Password" required><br>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</div>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    const baseURL = window.location.origin;
+
+    // Tab switching logic
+    const signupTab = document.getElementById('signupTab');
+    const loginTab = document.getElementById('loginTab');
+    const signupFormDiv = document.getElementById('signupForm');
+    const loginFormDiv = document.getElementById('loginForm');
+
+    signupTab.addEventListener('click', () => {
+        signupTab.classList.add('active');
+        loginTab.classList.remove('active');
+        signupFormDiv.classList.add('active');
+        loginFormDiv.classList.remove('active');
+    });
+
+    loginTab.addEventListener('click', () => {
+        loginTab.classList.add('active');
+        signupTab.classList.remove('active');
+        loginFormDiv.classList.add('active');
+        signupFormDiv.classList.remove('active');
+    });
+
+    // Reusable login function
+    async function loginUser(username, password) {
+        const response = await fetch(`${baseURL}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Logged In!',
+                text: data.message || "Login successful!",
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
+                showClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__fadeOutUp'
+                }
+            }).then(() => {
+                localStorage.setItem("username", username); // Just in case
+                window.location.href = 'proj3.3.html';
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: data.error || "Invalid username or password",
+                confirmButtonColor: '#d33',
+                showClass: {
+                    popup: 'animate__animated animate__shakeX'
+                }
+            });
+        }
+    }
+
+    // Sign up form submission
+    const signupForm = signupFormDiv.querySelector('form');
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        const response = await fetch(`${baseURL}/create-account`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem("username", username);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Account Created!',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                // Automatically login after account creation
+                loginUser(username, password);
+            });
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: data.error || "Account creation failed"
+            });
+        }
+    });
+
+    // Login form submission
+    const loginForm = loginFormDiv.querySelector('form');
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+
+        if (!username || !password) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Info',
+                text: 'Username and Password cannot be empty',
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+
+        loginUser(username, password); // Reuse the same login function
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Search Users</title>
+        <!-- Bootstrap Icons CDN -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+        <style>
+            body {
+                font-family: 'Segoe UI', sans-serif;
+                background: linear-gradient(135deg, #f2f2f2, #dff6ff);
+                margin: 0;
+                padding-top: 80px; /* Add this */
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                min-height: 100vh;
+            }
+            .card-actions button:disabled {
+    opacity: 0.7;
+    pointer-events: none;
+}
+    
+            /* ... rest of your styles ... */
+
+        .search-container {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 500px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .search-container h2 {
+            margin-bottom: 15px;
+            font-size: 24px;
+            text-align: center;
+            color: #333;
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        #searchInput:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .result-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 123, 255, 0.2);
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+
+        .card-actions button {
+            padding: 6px 10px;
+            margin-left: 5px;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .card-actions button:hover {
+            background-color: #0056b3;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .notification-popup {
+    position: fixed;
+    top: 20px;  /* You can change to bottom: 20px to show at the bottom */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #007bff;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 18px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+.notification-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+        /* --- NAVIGATION BAR --- */
+.dashboard-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: #007bff;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.dashboard-nav button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.dashboard-nav button:hover {
+    transform: scale(1.2);
+}
+        
+    </style>
+</head>
+<body>
+    <div id="notificationPopUp" class="notification-popup" style="display: none;">
+    1 new notification!
+</div>
+    <nav class="dashboard-nav">
+       <button id="chat-button" style="position: relative;">
+  💬 
+  <span id="chat-notification-dot" style="
+    display: none;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+    border: 2px solid white;
+  "></span>
+</button>
+        <button onclick="window.location.href='proj3.4.html'"><i class="bi bi-search"></i></button>
+        <button id="profileBtn" ><i class="bi bi-person-circle"></i></button>
+        <button onclick="window.location.href='proj3.6.html'" id="notificationButton" style="position: relative;">
+            <i class="bi bi-bell"></i>
+            <span id="notificationDot" style="
+                position: absolute;
+                top: 0;
+                right: 0;
+                height: 10px;
+                width: 10px;
+                background-color: red;
+                border-radius: 50%;
+                display: none;
+              "></span>
+          </button>
+        <button id="geo"><i class="bi bi-geo-alt"></i></button>
+    </nav>
+    <div class="search-container">
+        <h2>🔍 Search Accounts</h2>
+        <input type="text" id="searchInput" placeholder="Type a username...">
+        <div id="resultsContainer" class="results"></div>
+    </div>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script>
+  const socket = io(); // establish connection
+   let currentUserId;
+
+  // Fetch current user's ID from the server
+  fetch('/current-user')
+    .then(res => res.json())
+    .then(data => {
+      if (data._id) {
+        currentUserId = data._id;
+        socket.emit('join', { user_id: currentUserId });
+        console.log("🟢 Joined room:", currentUserId);
+      } else {
+        console.error("❌ Failed to fetch user ID");
+      }
+    });
+
+  const chatNotificationDot = document.getElementById("chat-notification-dot");
+  function showChatNotificationDot() {
+  console.log("🔴 showChatNotificationDot() called!");
+  document.getElementById("chat-notification-dot").style.display = "block";
+  localStorage.setItem("chatDotVisible", "true");  // 🔐 Save state
+}
+  // Hide the red dot
+function hideChatNotificationDot() {
+  document.getElementById("chat-notification-dot").style.display = "none";
+  localStorage.removeItem("chatDotVisible");  // 🧹 Clear state
+}
+
+  // Open chat page & hide the dot
+  function openChatPage() {
+  hideChatNotificationDot();  // ✅ Clear the dot
+  window.location.href = "proj3.7.html";  // or wherever your chat is
+}
+
+  // Listen for real-time messages
+  socket.on('receive_message', (msg) => {
+    console.log("📩 Received a real-time message:", msg);
+    const currentUrl = window.location.pathname;
+    
+    // ✅ Show red dot if you're NOT already on proj3.8.html
+    if (!currentUrl.includes("proj3.8.html")) {
+      showChatNotificationDot();
+    }
+  });
+
+  // 🔗 Attach openChatPage() to your chat button
+  document.getElementById("chat-button").addEventListener("click", openChatPage);
+
+  socket.on('connect', () => {
+    console.log("Socket connected");
+  });
+  socket.on('new_notification', (data) => {
+            console.log("New notification received:", data);
+
+            // Show red dot
+            const dot = document.getElementById("notificationDot");
+            if (dot) dot.style.display = "block";
+
+            // Show pop-up
+            const popUp = document.getElementById('notificationPopUp');
+            if (popUp) {
+                popUp.classList.add('show');
+                popUp.style.display = 'block';
+
+                // Hide pop-up after 3 seconds
+                setTimeout(() => {
+                    popUp.classList.remove('show');
+                    popUp.style.display = 'none';
+                }, 3000);
+            }
+        });
+  socket.on('remove_notification', (data) => {
+    document.getElementById("notificationDot").style.display = "none";
+});
+
+  
+
+    
+        function performSearch(query) {
+    fetch(`/search-users?query=${query}&_=${Date.now()}`)
+        .then(res => res.json())
+        .then(users => {
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '';
+
+            if (users.length === 0) {
+                resultsContainer.innerHTML = '<p>No results found.</p>';
+                return;
+            }
+
+            users.forEach(user => {
+                const card = document.createElement('div');
+                card.classList.add('result-card');
+
+                const isConnected = user.is_connected; // True if already connected
+                const isRequestSent = user.is_request_sent; // True if a request is pending
+
+                card.innerHTML = `
+                    <div class="profile-info">
+                        <img src="${user.profile_pic || '/static/uploads/dummyperson copy.png'}" alt="profile">
+                        <div>
+                            <strong>${user.username}</strong><br>
+                            <small>${user.profession || ''}</small>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button onclick="window.location.href='proj3.5.html?username=${user.username}'">View Profile</button>
+                        ${
+                            isConnected
+                                ? `<button class="chat-btn" onclick="startChat('${user.username}')">
+                                       <i class="bi bi-chat-dots-fill"></i> Chat
+                                   </button>`
+                                : `<button 
+                                        class="connection-btn"
+                                        style="background-color: ${isRequestSent ? '#6c757d' : '#007bff'}"
+                                   >
+                                        <i class="bi bi-person-plus-fill"></i>
+                                        ${isRequestSent ? "Cancel Request" : "Connect"}
+                                   </button>`
+                        }
+                    </div>
+                `;
+
+                resultsContainer.appendChild(card);
+
+                if (!isConnected) {
+                    const connectionBtn = card.querySelector('.connection-btn');
+                    connectionBtn.addEventListener('click', () => {
+                        if (connectionBtn.textContent.includes("Cancel")) {
+                            cancelConnection(user.username, connectionBtn);
+                        } else {
+                            addConnection(user.username, connectionBtn);
+                        }
+                    });
+                }
+            });
+        });
+}
+    
+        document.getElementById('searchInput').addEventListener('input', function () {
+            const query = this.value.trim();
+            if (query.length === 0) {
+                document.getElementById('resultsContainer').innerHTML = '';
+                return;
+            }
+            performSearch(query);
+        });
+    
+        function addConnection(username, buttonElement) {
+    // Temporarily disable to avoid double-click
+    buttonElement.disabled = true;
+
+    fetch('/add-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            buttonElement.innerHTML = '<i class="bi bi-person-plus-fill"></i> Cancel Request';
+            buttonElement.style.backgroundColor = "#6c757d";
+        }
+    })
+    .catch(err => {
+        console.error("Add connection failed:", err);
+    })
+    .finally(() => {
+        buttonElement.disabled = false;
+    });
+}
+    
+function cancelConnection(username, buttonElement) {
+    buttonElement.disabled = true;
+
+    fetch('/remove-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            buttonElement.innerHTML = '<i class="bi bi-person-plus-fill"></i> Connect';
+            buttonElement.style.backgroundColor = "#007bff";
+        }
+    })
+    .catch(err => {
+        console.error("Cancel connection failed:", err);
+    })
+    .finally(() => {
+        buttonElement.disabled = false;
+    });
+}
+document.getElementById('profileBtn').addEventListener('click', () => {
+            window.location.href = 'proj3.3.html';
+        });
+        function startChat(username) {
+        window.location.href = `proj3.7.html?username=${username}`;
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem("chatDotVisible") === "true") {
+    showChatNotificationDot();  // 🔁 Show again after refresh
+  }});
+   document.getElementById('geo').addEventListener('click', () => {
+            window.location.href = 'proj3.9.html';
+        });
+
+
+    </script>
+</body>
+</html>
